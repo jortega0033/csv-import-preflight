@@ -6,18 +6,19 @@ Status: **planned; only the scaffold exists, no product behaviour.** This page m
 
 | Boundary | Module | Owns | Parent ticket |
 |---|---|---|---|
+| Entry point | `csv_preflight/__main__.py` | Command line: `--help`, `--version`, `serve` | #2 |
 | Contracts | `csv_preflight/contracts.py` | Header, record span, destination schema, validation error, disposition shapes and limits | #2 |
 | Dialect scanner | `csv_preflight/dialect.py` | Byte checks, quote and line grammar, spans, agreement with `csv.reader` | #3 |
 | Mapping | `csv_preflight/mapping.py` | Versioned header mappings, absent-header errors | #4 |
 | Field rules | `csv_preflight/rules.py` | Destination-order checks, normalisation, reason codes | #4 |
 | Classification | `csv_preflight/classify.py` | Dispositions, winner links, count equations | #5 |
 | Exports | `csv_preflight/exports.py` | Clean CSV, complete and rejects JSONL | #5 |
-| Storage | `csv_preflight/store.py` | SQLite schema, run keys, attempts, retention, single-instance lock | #4 (mapping versions), #6 |
-| HTTP | `csv_preflight/server.py` | Loopback bind, request guards, routes, static assets | #2 (page), #6 |
-| Browser assets | `csv_preflight/static/` | File, Map, Run, Review, Export steps and history | #2 (shell), #6 |
-| Fixtures and oracle | `tests/fixtures/` | Fixtures A, B and C as bytes built without the application writer | #2, #3, #5 |
+| Storage | `csv_preflight/store.py` | SQLite schema, run keys, attempts, retention, single-instance lock | #2 (lock, connection), #3 (uploads), #4 (mapping versions), #6 |
+| HTTP | `csv_preflight/server.py` | Loopback bind, request guards, routes, static assets | #2 (page, guards), #3 (uploads), #4 (mappings), #6 |
+| Browser assets | `csv_preflight/static/` | File, Map, Run, Review, Export steps and history, the bundled supplier file | #2 (shell, bundled file), #3 (File step), #6 |
+| Fixtures and oracle | `tests/fixtures/` | Fixtures A, B and C as bytes built without the application writer | #2 (A), #3 (C), #4 (B), #5 (expected exports) |
 
-Dependency direction: `server` depends on `store`, `exports` and `classify`; `classify` on `rules`; `rules` and `mapping` on `contracts`; `dialect` on `contracts`. `contracts` imports nothing from the package. Test fixtures import nothing from the package.
+Dependency direction: `__main__` depends on `server`; `server` on `store`, `exports`, `classify`, `mapping` and `dialect`; `classify` on `rules` and `mapping`; `rules` and `mapping` on `contracts`; `dialect` on `contracts`. `contracts` imports nothing from the package. Test fixtures import nothing from the package, and the package imports nothing from `tests/`.
 
 ## Freeze points
 

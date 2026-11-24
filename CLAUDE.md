@@ -6,7 +6,7 @@ Working instructions for this repository. Read this file first, then the documen
 
 An offline workbench for a small operations team: load a supplier CSV in Chrome, map its columns, see why each record is accepted, invalid or a duplicate, download the clean import and a complete audit, and reopen the same result after a restart. Python 3.12 standard library and SQLite, `127.0.0.1` only, fictional data.
 
-**Only the scaffold exists; there is no product behaviour yet.** The repository holds the plan, the delivery tooling, the backlog in epic #1 and an empty runnable scaffold. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing baseline: there is none.
+**Only the scaffold exists; there is no product behaviour yet.** The repository holds the plan, the delivery tooling, the backlog in epic #1 and an empty runnable scaffold. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing product baseline: the only tests are the scaffold smoke tests.
 
 ## Sources of truth
 
@@ -51,7 +51,7 @@ The planned module map is in [docs/architecture.md](docs/architecture.md). Invar
 - Scanning, mapping, field rules, classification, storage and rendering stay separate. The browser shows server results and never decides a disposition.
 - The source is bytes. Empty files, invalid UTF-8, NUL, more than 8 MiB, a BOM anywhere but the start and a lone CR are format errors. The delimiter is never guessed.
 - The scanner and `csv.reader` (strict, untranslated newlines) must agree on record boundaries; a disagreement blocks the file.
-- Physical lines count from one, logical data records count from one without the header. A blank line outside quotes is one zero-field record.
+- Physical lines count from one, logical data records count from one without the header. A blank line outside quotes is one zero-field record and becomes invalid width.
 - A malformed file, header or limit blocks the whole file; a record with another width is a row-level invalid result. Headers match exactly, case included.
 - Every parsed record gets exactly one disposition, in the order invalid, duplicate, accepted. The first valid occurrence of a `part_id` wins, an invalid row never claims a key, and a duplicate names the winning ordinal.
 - Both count equations hold on every complete run: total = accepted + invalid + duplicate, and clean records = accepted with rejects = invalid + duplicate.
