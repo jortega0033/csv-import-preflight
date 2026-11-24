@@ -35,3 +35,14 @@ The plan leaves these open. Each is a recommendation by the orchestrator, adopte
 | #6 | Review page size | 50 records per page, ordered by ordinal. |
 | #7 | Network block in Chrome | Recorded as an owner check with the steps, or a headless run with a blocking host rule; the pull request says which. |
 | none | Licence | MIT, already in the repository (`LICENSE`). No ticket changes it. |
+
+## Program decisions (owner, 2026-11-24)
+
+The owner accepted the goal and each suggestion below. They apply from the phase they name; the rules of `CLAUDE.md` hold for phase 1 as written.
+
+| Decision | Implemented in |
+|---|---|
+| The repository has a program goal above phase 1: a data intake engine that proves what it accepted, in 6 phases. | Program issue #35 |
+| Phase 1 reads with the Python csv module next to its own scanner. Suggested: keep that rule; from phase 2 the own reader decides and csv is one of the judges. | Program issue #35 |
+| User-defined schemas and other dialects are outside the first release. Suggested: they enter with phases 2 and 4. | Program issue #35 |
+| Plain Python may be too slow for 100 GB. Suggested: choose the engine language at the start of phase 6 and keep the file formats and tests. | Program issue #35 |
