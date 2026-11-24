@@ -1,0 +1,6 @@
+[project]
+name = "csv-preflight"
+version = "0.0.0"
+description = "Offline CSV import preflight workbench"
+requires-python = ">=3.12"
+dependencies = []

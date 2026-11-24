@@ -6,7 +6,7 @@ Working instructions for this repository. Read this file first, then the documen
 
 An offline workbench for a small operations team: load a supplier CSV in Chrome, map its columns, see why each record is accepted, invalid or a duplicate, download the clean import and a complete audit, and reopen the same result after a restart. Python 3.12 standard library and SQLite, `127.0.0.1` only, fictional data.
 
-**Nothing is implemented yet.** The repository holds the plan, the delivery tooling and the backlog in epic #1. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing baseline: there is none.
+**Only the scaffold exists; there is no product behaviour yet.** The repository holds the plan, the delivery tooling, the backlog in epic #1 and an empty runnable scaffold. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing product baseline: the only tests are the scaffold smoke tests.
 
 ## Sources of truth
 
@@ -19,7 +19,7 @@ An offline workbench for a small operations team: load a supplier CSV in Chrome,
 | Project subagents, origin and local changes | [.claude/agency-agents/README.md](.claude/agency-agents/README.md) |
 | Ticket workflow and the step at which each role runs | [.claude/skills/implement-ticket/SKILL.md](.claude/skills/implement-ticket/SKILL.md), section "Agent roles" below |
 | How a ticket goes from the queue to a ready pull request, who may do what | "Delivery workflow" below |
-| UI and copy rules | [docs/ui-quality.md](docs/ui-quality.md) |
+| UI and copy rules, design tokens | [docs/ui-quality.md](docs/ui-quality.md), [docs/design-tokens.md](docs/design-tokens.md) |
 | Decisions the owner made, with dates | [docs/owner-decisions.md](docs/owner-decisions.md) |
 
 The plan wins for product design; the epic and tickets win for order and scope. A ticket that changes a contract fixes the plan in the same pull request.
@@ -40,8 +40,8 @@ Python 3.12 or 3.13. No install step is needed.
 
 | Purpose | Command | Status |
 |---|---|---|
-| Tests | `python -m unittest discover -s tests` | planned: real with the scaffold |
-| Help and version | `python -m csv_preflight --help` | planned: real with the scaffold |
+| Tests | `python -m unittest discover -s tests` | real (scaffold) |
+| Help and version | `python -m csv_preflight --help` | real (scaffold) |
 | Run the app | `python -m csv_preflight serve --port 8767 --data-dir ./data` | planned: #2 |
 
 ## Architecture boundaries
@@ -51,7 +51,7 @@ The planned module map is in [docs/architecture.md](docs/architecture.md). Invar
 - Scanning, mapping, field rules, classification, storage and rendering stay separate. The browser shows server results and never decides a disposition.
 - The source is bytes. Empty files, invalid UTF-8, NUL, more than 8 MiB, a BOM anywhere but the start and a lone CR are format errors. The delimiter is never guessed.
 - The scanner and `csv.reader` (strict, untranslated newlines) must agree on record boundaries; a disagreement blocks the file.
-- Physical lines count from one, logical data records count from one without the header. A blank line outside quotes is one zero-field record.
+- Physical lines count from one, logical data records count from one without the header. A blank line outside quotes is one zero-field record and becomes invalid width.
 - A malformed file, header or limit blocks the whole file; a record with another width is a row-level invalid result. Headers match exactly, case included.
 - Every parsed record gets exactly one disposition, in the order invalid, duplicate, accepted. The first valid occurrence of a `part_id` wins, an invalid row never claims a key, and a duplicate names the winning ordinal.
 - Both count equations hold on every complete run: total = accepted + invalid + duplicate, and clean records = accepted with rejects = invalid + duplicate.
@@ -116,7 +116,7 @@ How a ticket reaches the owner. Each piece is described in its own file; this pa
 - **Pull request:** [`.github/pull_request_template.md`](.github/pull_request_template.md). Tickets use [`.github/ISSUE_TEMPLATE/implementation-ticket.md`](.github/ISSUE_TEMPLATE/implementation-ticket.md).
 - **Labels:** `status:ready`, `status:blocked`, `status:in-progress`, `needs-decision`, `tracking` (parent container, never worked; its sub-issues are the work items).
 - **Changelog:** every ticket pull request adds one line under Unreleased in [CHANGELOG.md](CHANGELOG.md).
-- **UI and copy:** [docs/ui-quality.md](docs/ui-quality.md); the `ui-ux-pro-max` and `unslop` skills are in `.claude/skills/`.
+- **UI and copy:** [docs/ui-quality.md](docs/ui-quality.md); the `ui-ux-pro-max` and `unslop` skills are in `.claude/skills/`. Colours come from the shared design tokens in `csv_preflight/static/tokens.css` ([docs/design-tokens.md](docs/design-tokens.md)); new UI adds no colour literals.
 - **Decisions:** [docs/owner-decisions.md](docs/owner-decisions.md). Security reports: [SECURITY.md](SECURITY.md).
 - **Merge and release:** only the owner merges and releases ([docs/RELEASING.md](docs/RELEASING.md)). An agent stops at a ready pull request.
 
