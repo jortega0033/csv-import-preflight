@@ -6,7 +6,7 @@ Working instructions for this repository. Read this file first, then the documen
 
 An offline workbench for a small operations team: load a supplier CSV in Chrome, map its columns, see why each record is accepted, invalid or a duplicate, download the clean import and a complete audit, and reopen the same result after a restart. Python 3.12 standard library and SQLite, `127.0.0.1` only, fictional data.
 
-**Nothing is implemented yet.** The repository holds the plan, the delivery tooling and the backlog in epic #1. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing baseline: there is none.
+**Only the scaffold exists; there is no product behaviour yet.** The repository holds the plan, the delivery tooling, the backlog in epic #1 and an empty runnable scaffold. Commands marked planned below do not work yet. Do not describe a planned thing as working, and do not claim a passing baseline: there is none.
 
 ## Sources of truth
 
@@ -40,8 +40,8 @@ Python 3.12 or 3.13. No install step is needed.
 
 | Purpose | Command | Status |
 |---|---|---|
-| Tests | `python -m unittest discover -s tests` | planned: real with the scaffold |
-| Help and version | `python -m csv_preflight --help` | planned: real with the scaffold |
+| Tests | `python -m unittest discover -s tests` | real (scaffold) |
+| Help and version | `python -m csv_preflight --help` | real (scaffold) |
 | Run the app | `python -m csv_preflight serve --port 8767 --data-dir ./data` | planned: #2 |
 
 ## Architecture boundaries
