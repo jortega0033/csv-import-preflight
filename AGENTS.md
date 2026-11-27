@@ -18,10 +18,10 @@ Python standard library only. Do not add a package, a download or a CDN referenc
 
 ## Ticket work
 
-To implement a GitHub issue, follow the steps in [.claude/skills/implement-ticket/SKILL.md](.claude/skills/implement-ticket/SKILL.md) and the section "Agent roles" in [CLAUDE.md](CLAUDE.md). The role files in `.claude/agents/` each start with a section "In this repository" that holds the project rules for that role. An agent that cannot delegate to those roles does the before-coding, while-coding and specialist steps itself and says so in the pull request. The review gate and the acceptance gate still apply to every ticket, but the agent that wrote the change cannot pass them: do not push or open the pull request. Stop, report that the gates could not run, and leave the run for the owner. The order is: local evidence, both gates, draft pull request, CI, then ready only on green CI.
+To implement a GitHub issue, follow the steps in [.claude/skills/implement-ticket/SKILL.md](.claude/skills/implement-ticket/SKILL.md) and the section "Agent roles" in [CLAUDE.md](CLAUDE.md). The role files in `.claude/agents/` each start with a section "In this repository" that holds the project rules for that role. An agent that cannot delegate to those roles does the before-coding, while-coding and specialist steps itself and says so in the pull request. The review gate and the acceptance gate still apply to every ticket, but the agent that wrote the change cannot pass them: do not push or open the pull request. Stop, report that the gates could not run, and leave the run for the owner. The order is: local evidence, both gates, draft pull request, CI, ready on green CI, then merge or hand over as the merge rule in `CLAUDE.md` says.
 
 ## Loop conventions
 
-- The loop runs at L1: report-only, started by hand. It proposes; it does not label, comment, close, edit source, push or merge.
+- The loop runs at L1: report-only, started by hand. It proposes; it does not label, comment, close, edit source, push or merge. Ticket work is not a loop run.
 - No scheduler and no loop workflow is installed. Do not add one without the owner's approval.
 - See [LOOP.md](LOOP.md) for the manual command and the human gates.
