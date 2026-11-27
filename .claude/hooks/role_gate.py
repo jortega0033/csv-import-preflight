@@ -4,8 +4,8 @@
 Two modes, both called by the hooks in .claude/settings.json:
 
   record  when a subagent finishes (SubagentStop): note which role ran, and when.
-  check   before a shell command: if the command opens a pull request or marks
-          one ready, refuse unless every gate role ran after the last code edit.
+  check   before a shell command: if the command opens, readies or merges a pull
+          request, refuse unless every gate role ran after the last code edit.
 
 The gate judges the branch being proposed, not just the session's directory:
 a `cd`/`Set-Location`/`pushd` before `gh pr` moves the judged directory,
@@ -34,7 +34,7 @@ import time
 GATE_ROLES = ["Code Reviewer", "Reality Checker"]  # GATE_ROLES_MARKER
 LEDGER = os.path.join(".claude", "state", "role-runs.jsonl")  # legacy, read only
 SHARED_LEDGER = "claude-role-runs.jsonl"  # in the common git dir
-PR_COMMAND = re.compile(r"(?:^|[\s;&|(])gh(?:\.exe)?\s+pr\s+(create|ready)\b")
+PR_COMMAND = re.compile(r"(?:^|[\s;&|(])gh(?:\.exe)?\s+pr\s+(create|ready|merge)\b")
 ARG = r"(?:\"([^\"]*)\"|'([^']*)'|([^\s;&|()]+))"
 CD_COMMAND = re.compile(
     r"(?:^|[\s;&|(])(?:cd|chdir|pushd|Set-Location|Push-Location|sl)\s+"
@@ -330,7 +330,7 @@ def check(event):
     if head and head != current_branch(root):
         root, ref = locate_branch(root, head)
     verdict = assess_branch(root, ref) if ref else assess_checkout(root)
-    if verdict is None and match.group(1) == "ready" and not head and is_main_checkout(root):
+    if verdict is None and match.group(1) in ("ready", "merge") and not head and is_main_checkout(root):
         target = ready_target(rest)
         looked_up = pr_head(root, target) if target else None
         if looked_up and looked_up != current_branch(root):
@@ -429,6 +429,7 @@ def self_test():
         write(os.path.join(root, "app.py"), "x = 2\n")
         expect("code change without review is blocked", run(root, "check", pr), 2)
         expect("gh pr ready is gated too", run(root, "check", gh("cd x && gh pr ready 12")), 2)
+        expect("gh pr merge is gated too", run(root, "check", gh("cd x && gh pr merge 12 --squash")), 2)
         expect("owner switch passes", run(root, "check", pr, {"ROLE_GATE": "off"}), 0)
 
         time.sleep(SLACK_SECONDS + 1)

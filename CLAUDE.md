@@ -18,7 +18,7 @@ An offline workbench for a small operations team: load a supplier CSV in Chrome,
 | Loop setup and its limits | [LOOP.md](LOOP.md), [loop-constraints.md](loop-constraints.md) |
 | Project subagents, origin and local changes | [.claude/agency-agents/README.md](.claude/agency-agents/README.md) |
 | Ticket workflow and the step at which each role runs | [.claude/skills/implement-ticket/SKILL.md](.claude/skills/implement-ticket/SKILL.md), section "Agent roles" below |
-| How a ticket goes from the queue to a ready pull request, who may do what | "Delivery workflow" below |
+| How a ticket goes from the queue to a merged pull request, who may do what | "Delivery workflow" and "Merge rule" below |
 | UI and copy rules, design tokens | [docs/ui-quality.md](docs/ui-quality.md), [docs/design-tokens.md](docs/design-tokens.md) |
 | Decisions the owner made, with dates | [docs/owner-decisions.md](docs/owner-decisions.md) |
 
@@ -66,11 +66,24 @@ The planned module map is in [docs/architecture.md](docs/architecture.md). Invar
 
 - `main` is the default branch. Work on one branch per ticket: `<issue-number>-<short-slug>`. Never commit to `main`.
 - Small commits with imperative subjects and a type prefix (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
-- Order for every ticket: local evidence, Code Reviewer, Reality Checker, then a draft pull request that says `Part of epic #1` and `Closes #<ticket>`, then CI on that draft, then `gh pr ready` only when CI is green.
-- Do not push or open a pull request unless the owner asked in the current session; starting `/next-ticket` is that request for one ticket. Only the owner merges and releases. Do not push to `main`, force-push, or merge your own pull request.
+- Order for every ticket: local evidence, review gate, acceptance gate, then a draft pull request that says `Part of epic #1` and `Closes #<ticket>`, then CI on that draft, then `gh pr ready` only when CI is green, then merge or hand over as the merge rule below says.
+- Do not push, open or merge a pull request unless the owner asked in the current session; starting `/next-ticket` is that request for its whole run. Only the owner releases. Do not push to `main` or force-push.
 - Never commit a data directory (`data/`), `.env*`, or build output.
-- Do not change `.claude/agents/`, `LOOP.md`, `loop-constraints.md` or `loop-budget.md` as part of a feature ticket.
+- Do not change `.claude/`, `LOOP.md`, `loop-constraints.md` or `loop-budget.md` as part of a feature ticket.
 - Open owner decisions on a ticket are settled with the ticket's stated default. Where a ticket states none, take the conservative option and say so in the pull request.
+
+## Merge rule
+
+An agent merges its own pull request only when all four hold:
+
+1. Every check is green on the current head commit, no step was skipped that should have run, and the review gate passed on that commit.
+2. It is small: under 100 changed lines in total (additions plus deletions, lock files not counted).
+3. It is low risk: it does not touch dependencies or lock files, CI or `.github/`, agent configuration (`.claude/`), `CLAUDE.md` or `AGENTS.md`, security-relevant code (parsing of untrusted input, file or network access, origin checks), a stored or exchanged data format, the licence or a release, and it has no business, cost or pricing effect.
+4. It settles no open owner decision and makes no design decision that is hard to reverse.
+
+Merge it with `gh pr merge <n> --squash --delete-branch --match-head-commit <head sha>`. Never use `--admin`, and never merge with a red or running check.
+
+Everything else is for the owner: mark the pull request ready, comment on it "Owner review needed:" with the rule it fails, and go on with work that does not depend on it. When in doubt, ask for the review.
 
 ## Evidence before a ticket is called done
 
@@ -107,19 +120,19 @@ When asked to implement, continue or finish a GitHub issue, follow the playbook 
 
 ## Delivery workflow
 
-How a ticket reaches the owner. Each piece is described in its own file; this part only links them.
+How a ticket reaches `main`. Each piece is described in its own file; this part only links them.
 
-- **Start:** the owner runs `/next-ticket` ([`.claude/skills/next-ticket/SKILL.md`](.claude/skills/next-ticket/SKILL.md)); it picks one leaf ticket (never a `tracking` parent or a ticket with open sub-issues; the last sub-issue's pull request also closes the parent), creates the branch and worktree, and runs the playbook [`.claude/skills/implement-ticket/SKILL.md`](.claude/skills/implement-ticket/SKILL.md). Nothing is scheduled.
-- **Gate hook:** [`.claude/hooks/role_gate.py`](.claude/hooks/role_gate.py) blocks `gh pr create` and `gh pr ready` until Code Reviewer and Reality Checker ran after the last code edit. `ROLE_GATE=off` in the environment Claude Code is started from switches it off for that session; only the owner does that.
-- **Permissions:** [`.claude/settings.json`](.claude/settings.json). Agent configuration edits ask in the main checkout and in ticket worktrees; CI, `CLAUDE.md`, `AGENTS.md` and Loop-file edits ask only in the main checkout; in a ticket worktree they are limited by the playbook's scope rule and reviewed by the owner at merge (shell-made edits are not covered, so a ticket never changes agent configuration); force pushes, pushes to `main`, `gh pr merge`, releases and reads of `.env` are denied.
-- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Every job must be green on the current diff before a pull request is marked ready. The agent does not poll: it ends its turn with "Draft pull request #N is waiting for CI" and reads `gh pr checks` once when woken. Reviewers read the diff and evidence from `.claude/state/review/`. An acceptance step that needs a person is listed under "Owner checks" in the pull request.
+- **Start:** the owner runs `/next-ticket` ([`.claude/skills/next-ticket/SKILL.md`](.claude/skills/next-ticket/SKILL.md)); it picks leaf tickets one after another (never a `tracking` parent or a ticket with open sub-issues; the last sub-issue's pull request also closes the parent), creates the branch and worktree for each, and runs the playbook [`.claude/skills/implement-ticket/SKILL.md`](.claude/skills/implement-ticket/SKILL.md). `/next-ticket <issue number>` works one ticket only. Nothing is scheduled.
+- **Gate hook:** [`.claude/hooks/role_gate.py`](.claude/hooks/role_gate.py) blocks `gh pr create`, `gh pr ready` and `gh pr merge` until Code Reviewer and Reality Checker ran after the last code edit. `ROLE_GATE=off` in the environment Claude Code is started from switches it off for that session; only the owner does that.
+- **Permissions:** [`.claude/settings.json`](.claude/settings.json). Nothing asks first, so a started run is not interrupted; the scope rule of the playbook and the merge rule above are the controls. Force pushes, pushes to `main`, merges with `--admin`, `git reset --hard`, `git clean`, deleting the repository, releases and reads of `.env` are denied.
+- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Every job must be green on the current diff before a pull request is marked ready or merged. The agent waits with `gh pr checks <n> --watch`; where the host cannot wait, it ends its turn with "Draft pull request #N is waiting for CI" and reads `gh pr checks` once when woken. Reviewers read the diff and evidence from `.claude/state/review/`. An acceptance step that needs a person is listed under "Owner checks" in the pull request, and such a pull request waits for the owner.
 - **Pull request:** [`.github/pull_request_template.md`](.github/pull_request_template.md). Tickets use [`.github/ISSUE_TEMPLATE/implementation-ticket.md`](.github/ISSUE_TEMPLATE/implementation-ticket.md).
 - **Labels:** `status:ready`, `status:blocked`, `status:in-progress`, `needs-decision`, `tracking` (parent container, never worked; its sub-issues are the work items).
 - **Changelog:** every ticket pull request adds one line under Unreleased in [CHANGELOG.md](CHANGELOG.md).
 - **UI and copy:** [docs/ui-quality.md](docs/ui-quality.md); the `ui-ux-pro-max` and `unslop` skills are in `.claude/skills/`. Colours come from the shared design tokens in `csv_preflight/static/tokens.css` ([docs/design-tokens.md](docs/design-tokens.md)); new UI adds no colour literals.
 - **Decisions:** [docs/owner-decisions.md](docs/owner-decisions.md). Security reports: [SECURITY.md](SECURITY.md).
-- **Merge and release:** only the owner merges and releases ([docs/RELEASING.md](docs/RELEASING.md)). An agent stops at a ready pull request.
+- **Merge and release:** an agent merges only what the merge rule above allows and asks the owner to review the rest. Only the owner releases ([docs/RELEASING.md](docs/RELEASING.md)).
 
 ## Loop
 
-Issue triage runs at L1: report-only, started by hand, no scheduler, no GitHub writes. See [LOOP.md](LOOP.md).
+Issue triage runs at L1: report-only, started by hand, no scheduler, no GitHub writes. Ticket work is not a loop run. See [LOOP.md](LOOP.md).
